@@ -47,6 +47,23 @@ export const getRecentSales = async (): Promise<SalesData[]> => {
   }
 };
 
+export const getSalesByDateRange = async (startDate: string, endDate: string): Promise<SalesData[]> => {
+  try {
+    // Note: Dates are stored as YYYY-MM-DD strings, which are lexicographically sortable
+    const q = query(
+      collection(db, SALES_COLLECTION), 
+      where("date", ">=", startDate),
+      where("date", "<=", endDate),
+      orderBy("date", "desc")
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SalesData));
+  } catch (error) {
+    console.error("Error fetching sales by date:", error);
+    return [];
+  }
+};
+
 export const deleteSale = async (id: string) => {
   try {
     await deleteDoc(doc(db, SALES_COLLECTION, id));
@@ -79,6 +96,22 @@ export const getRecentPosts = async (): Promise<PostData[]> => {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PostData));
   } catch (error) {
     console.error("Error fetching posts:", error);
+    return [];
+  }
+};
+
+export const getPostsByDateRange = async (startDate: string, endDate: string): Promise<PostData[]> => {
+  try {
+    const q = query(
+      collection(db, POSTS_COLLECTION), 
+      where("date", ">=", startDate),
+      where("date", "<=", endDate),
+      orderBy("date", "desc")
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PostData));
+  } catch (error) {
+    console.error("Error fetching posts by date:", error);
     return [];
   }
 };
