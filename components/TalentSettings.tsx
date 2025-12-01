@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { addTalentReference, getTalentReferences, deleteTalentReference, updateTalentReference } from '../services/db';
 import { TalentReference } from '../types';
-import { Trash2, Plus, Users, Edit2, X, CheckCircle, Save } from 'lucide-react';
+import { Trash2, Plus, Users, Edit2, X, Save } from 'lucide-react';
 
 const TalentSettings: React.FC = () => {
   const [talents, setTalents] = useState<TalentReference[]>([]);
@@ -11,6 +11,7 @@ const TalentSettings: React.FC = () => {
   
   // Edit Mode State
   const [editingId, setEditingId] = useState<string | null>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const refreshList = async () => {
     try {
@@ -37,12 +38,10 @@ const TalentSettings: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (newName.trim()) { // Removed accounts.length > 0 requirement to allow saving name first
+    if (newName.trim()) { 
       if (editingId) {
-        // Update existing
         await updateTalentReference(editingId, newName.trim(), accounts);
       } else {
-        // Create new
         await addTalentReference(newName.trim(), accounts);
       }
       resetForm();
@@ -54,10 +53,9 @@ const TalentSettings: React.FC = () => {
     if (talent.id) {
       setEditingId(talent.id);
       setNewName(talent.name);
-      // Safe spread with default ensures no crash if accounts is undefined
       setAccounts([...(talent.accounts || [])]);
-      // Scroll to top to see form
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => nameInputRef.current?.focus(), 100);
     }
   };
 
@@ -89,6 +87,7 @@ const TalentSettings: React.FC = () => {
           </h2>
           {editingId && (
             <button 
+              type="button"
               onClick={resetForm}
               className="text-sm text-slate-400 hover:text-slate-200 flex items-center gap-1 bg-slate-800 px-3 py-1 rounded-full border border-slate-700 shadow-sm transition-colors"
             >
@@ -101,6 +100,7 @@ const TalentSettings: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1">Nama Talent</label>
             <input
+              ref={nameInputRef}
               type="text"
               value={newName}
               onChange={e => setNewName(e.target.value)}
@@ -120,8 +120,8 @@ const TalentSettings: React.FC = () => {
                 onKeyDown={e => e.key === 'Enter' && handleAddAccount()}
               />
               <button 
-                onClick={handleAddAccount}
                 type="button"
+                onClick={handleAddAccount}
                 className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 border border-slate-700 transition-colors"
               >
                 <Plus size={20} />
@@ -138,6 +138,7 @@ const TalentSettings: React.FC = () => {
                 <span key={idx} className="bg-amber-900/20 text-amber-500 border border-amber-900/50 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
                   {acc}
                   <button 
+                    type="button"
                     onClick={() => removeAccount(idx)}
                     className="hover:text-red-400 rounded-full p-0.5"
                     title="Hapus akun ini"
@@ -150,18 +151,30 @@ const TalentSettings: React.FC = () => {
           </div>
         )}
 
-        <button
-          onClick={handleSubmit}
-          disabled={!newName}
-          className={`w-full py-3 rounded-lg text-white font-bold transition-all flex justify-center items-center gap-2 shadow-lg shadow-amber-900/20 ${
-            editingId 
-              ? 'bg-amber-600 hover:bg-amber-500' 
-              : 'bg-amber-600 hover:bg-amber-500'
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {editingId ? <Save size={18} /> : <Plus size={18} />}
-          {editingId ? 'Update Data Talent' : 'Simpan Talent'}
-        </button>
+        <div className="flex gap-3">
+          {editingId && (
+            <button
+              type="button"
+              onClick={() => handleDelete(editingId)}
+              className="px-6 py-3 rounded-lg text-white font-bold bg-red-600 hover:bg-red-500 transition-all flex justify-center items-center gap-2 shadow-lg shadow-red-900/20"
+            >
+              <Trash2 size={18} /> Hapus
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!newName}
+            className={`flex-1 py-3 rounded-lg text-white font-bold transition-all flex justify-center items-center gap-2 shadow-lg shadow-amber-900/20 ${
+              editingId 
+                ? 'bg-amber-600 hover:bg-amber-500' 
+                : 'bg-amber-600 hover:bg-amber-500'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {editingId ? <Save size={18} /> : <Plus size={18} />}
+            {editingId ? 'Update Data Talent' : 'Simpan Talent'}
+          </button>
+        </div>
       </div>
 
       {/* List Section */}
@@ -181,7 +194,6 @@ const TalentSettings: React.FC = () => {
                   {editingId === t.id && <span className="text-xs bg-amber-900/50 text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded-full">Editing</span>}
                 </h3>
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {/* Safe map with fallback */}
                   {(t.accounts || []).map((acc, i) => (
                     <span key={i} className="text-xs bg-slate-950 text-slate-400 px-2 py-1 rounded border border-slate-800">
                       {acc}
@@ -193,14 +205,17 @@ const TalentSettings: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex gap-2 w-full md:w-auto opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* REMOVED OPACITY CLASSES HERE for better usability */}
+              <div className="flex gap-2 w-full md:w-auto">
                 <button 
+                  type="button"
                   onClick={() => handleEdit(t)}
                   className="flex-1 md:flex-none flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors shadow-sm"
                 >
                   <Edit2 size={16} /> Edit
                 </button>
                 <button 
+                  type="button"
                   onClick={() => t.id && handleDelete(t.id)}
                   className="flex-1 md:flex-none flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-red-400 bg-slate-800 hover:bg-red-900/30 rounded-lg border border-slate-700 hover:border-red-900/50 transition-colors shadow-sm"
                 >

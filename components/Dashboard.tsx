@@ -13,13 +13,14 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import { DollarSign, Share2, TrendingUp, Users, Package, Trash2, Calendar, Download } from 'lucide-react';
+import { DollarSign, Share2, TrendingUp, Users, Package, Trash2, Calendar, Download, RefreshCw, Cloud, AlertTriangle } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const [sales, setSales] = useState<SalesData[]>([]);
   const [posts, setPosts] = useState<PostData[]>([]);
   const [products, setProducts] = useState<ProductData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('syncing');
 
   // Date Filter State
   const today = new Date();
@@ -30,15 +31,23 @@ const Dashboard: React.FC = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    const [salesData, postsData, productsData] = await Promise.all([
-      getSalesByDateRange(startDate, endDate),
-      getPostsByDateRange(startDate, endDate),
-      getProducts()
-    ]);
-    setSales(salesData);
-    setPosts(postsData);
-    setProducts(productsData);
-    setLoading(false);
+    setSyncStatus('syncing');
+    try {
+      const [salesData, postsData, productsData] = await Promise.all([
+        getSalesByDateRange(startDate, endDate),
+        getPostsByDateRange(startDate, endDate),
+        getProducts()
+      ]);
+      setSales(salesData);
+      setPosts(postsData);
+      setProducts(productsData);
+      setSyncStatus('idle');
+    } catch (error) {
+      console.error("Sync error:", error);
+      setSyncStatus('error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -47,6 +56,7 @@ const Dashboard: React.FC = () => {
 
   const handleDeleteSale = async (id: string) => {
     if (window.confirm("Apakah Anda yakin ingin menghapus data penjualan ini dari Dashboard?")) {
+      setSyncStatus('syncing');
       await deleteSale(id);
       fetchData(); // Refresh data
     }
@@ -148,29 +158,53 @@ const Dashboard: React.FC = () => {
     <div className="p-2 md:p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header & Filters */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
-        <h2 className="text-2xl font-bold text-slate-100">Dashboard Overview</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-slate-100">Dashboard Overview</h2>
+          
+          {/* Sync Status Indicator */}
+          <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-medium">
+            {syncStatus === 'syncing' && (
+              <>
+                <RefreshCw size={12} className="animate-spin text-amber-500" />
+                <span className="text-slate-400">Syncing...</span>
+              </>
+            )}
+            {syncStatus === 'idle' && (
+              <>
+                <Cloud size={12} className="text-emerald-500" />
+                <span className="text-emerald-500">Data Synced</span>
+              </>
+            )}
+            {syncStatus === 'error' && (
+              <>
+                <AlertTriangle size={12} className="text-red-500" />
+                <span className="text-red-500">Sync Error</span>
+              </>
+            )}
+          </div>
+        </div>
         
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 bg-slate-900 p-1.5 rounded-lg border border-slate-800">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <div className="flex items-center gap-2 bg-slate-900 p-1.5 rounded-lg border border-slate-800 flex-1 md:flex-none">
             <Calendar size={16} className="text-amber-500 ml-2" />
             <input 
               type="date" 
               value={startDate} 
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-transparent text-slate-200 text-sm focus:outline-none px-2 py-1"
+              className="bg-transparent text-slate-200 text-sm focus:outline-none px-2 py-1 w-full md:w-auto"
             />
             <span className="text-slate-500">-</span>
             <input 
               type="date" 
               value={endDate} 
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-transparent text-slate-200 text-sm focus:outline-none px-2 py-1"
+              className="bg-transparent text-slate-200 text-sm focus:outline-none px-2 py-1 w-full md:w-auto"
             />
           </div>
           
           <button 
             onClick={handleDownloadCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-700 transition-colors text-sm font-medium"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-700 transition-colors text-sm font-medium whitespace-nowrap"
             title="Download CSV Laporan Penjualan"
           >
             <Download size={16} /> Export
@@ -222,8 +256,9 @@ const Dashboard: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="animate-spin h-8 w-8 border-4 border-amber-500 rounded-full border-t-transparent"></div>
+        <div className="flex h-64 items-center justify-center flex-col gap-4">
+          <div className="animate-spin h-10 w-10 border-4 border-amber-500 rounded-full border-t-transparent"></div>
+          <p className="text-slate-500 animate-pulse">Synchronizing Data...</p>
         </div>
       ) : (
         <>
@@ -345,7 +380,10 @@ const Dashboard: React.FC = () => {
                     <tr key={sale.id || idx} className="hover:bg-slate-800 transition-colors">
                       <td className="px-6 py-3">{sale.date}</td>
                       <td className="px-6 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${sale.type === 'general' ? 'bg-blue-900/20 text-blue-400 border-blue-900/50' : 'bg-purple-900/20 text-purple-400 border-purple-900/50'}`}>
+                        <span 
+                          title={sale.type === 'general' ? "Aggregated general sales data (GMV)" : "Direct sales linked to a specific product"}
+                          className={`cursor-help px-2 py-1 rounded-full text-xs font-medium border ${sale.type === 'general' ? 'bg-blue-900/20 text-blue-400 border-blue-900/50' : 'bg-purple-900/20 text-purple-400 border-purple-900/50'}`}
+                        >
                           {sale.type === 'general' ? 'General' : 'Product Sales'}
                         </span>
                       </td>

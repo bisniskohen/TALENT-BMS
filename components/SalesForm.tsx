@@ -143,6 +143,7 @@ const SalesForm: React.FC = () => {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex space-x-4 bg-slate-900 p-1 rounded-xl shadow-sm border border-slate-800">
         <button
+          type="button"
           onClick={() => setActiveTab('general')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
             activeTab === 'general' 
@@ -154,6 +155,7 @@ const SalesForm: React.FC = () => {
           Penjualan Umum
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('content')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
             activeTab === 'content' 
@@ -418,7 +420,7 @@ const SalesForm: React.FC = () => {
       <div className="bg-slate-900 rounded-xl shadow-lg border border-slate-800 overflow-hidden">
         <div className="p-6 border-b border-slate-800 flex justify-between items-center">
           <h3 className="text-lg font-semibold text-slate-200">Riwayat Input Penjualan</h3>
-          <button onClick={refreshHistory} className="text-slate-500 hover:text-amber-500 transition-colors">
+          <button type="button" onClick={refreshHistory} className="text-slate-500 hover:text-amber-500 transition-colors">
              <RotateCcw size={18} />
           </button>
         </div>
@@ -450,6 +452,7 @@ const SalesForm: React.FC = () => {
                   </td>
                   <td className="px-6 py-3 text-right">
                     <button 
+                      type="button"
                       onClick={() => item.id && handleDelete(item.id)}
                       className="text-slate-600 hover:text-red-400 transition-colors"
                       title="Hapus Data"

@@ -18,8 +18,8 @@ import { SalesData, PostData, TalentReference, ProductData } from "../types";
 // Menggunakan nama baru agar data lama tidak tercampur/terhapus secara efektif dari view
 const SALES_COLLECTION = "new_sales_data";
 const POSTS_COLLECTION = "new_posts_data";
-const TALENTS_COLLECTION = "NAMA TALENT"; // Updated collection name per user request
-const PRODUCTS_COLLECTION = "new_products_data";
+const TALENTS_COLLECTION = "NAMA TALENT"; 
+const PRODUCTS_COLLECTION = "DATA PRODUK"; // Updated collection name per user request
 
 // --- SALES SERVICES ---
 
@@ -137,6 +137,17 @@ export const addProduct = async (data: Omit<ProductData, 'id' | 'timestamp'>) =>
     return true;
   } catch (error) {
     console.error("Error adding product:", error);
+    return false;
+  }
+};
+
+export const updateProduct = async (id: string, data: Partial<ProductData>) => {
+  try {
+    const docRef = doc(db, PRODUCTS_COLLECTION, id);
+    await updateDoc(docRef, data);
+    return true;
+  } catch (error) {
+    console.error("Error updating product:", error);
     return false;
   }
 };

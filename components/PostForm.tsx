@@ -230,7 +230,7 @@ const PostForm: React.FC = () => {
       <div className="bg-slate-900 rounded-xl shadow-lg border border-slate-800 overflow-hidden">
         <div className="p-6 border-b border-slate-800 flex justify-between items-center">
           <h3 className="text-lg font-semibold text-slate-200">Riwayat Input Konten</h3>
-          <button onClick={refreshHistory} className="text-slate-500 hover:text-amber-500 transition-colors">
+          <button type="button" onClick={refreshHistory} className="text-slate-500 hover:text-amber-500 transition-colors">
              <RotateCcw size={18} />
           </button>
         </div>
@@ -267,6 +267,7 @@ const PostForm: React.FC = () => {
                   </td>
                   <td className="px-6 py-3 text-right">
                     <button 
+                      type="button"
                       onClick={() => post.id && handleDelete(post.id)}
                       className="text-slate-600 hover:text-red-400 transition-colors"
                       title="Hapus Postingan"
